@@ -2,7 +2,7 @@ import datetime
 
 from django.test import TestCase
 from django.utils import timezone
-from .models import Question
+from .models import Question,Choice
 from django.urls import reverse
 # Create your tests here.
 
@@ -35,6 +35,24 @@ class QuestionModelTestCase(TestCase):
         time = timezone.now() - datetime.timedelta(hours=23, minutes=59, seconds=59)
         recent_question = Question(pub_date=time)
         self.assertIs(recent_question.was_published_recently(), True)
+
+    def test_question_has_choices_whith_choices(self):
+        """
+        Check if the function has choices return True if there is a choice associated to that question
+        """
+        time = timezone.now() - datetime.timedelta(hours=23, minutes=59, seconds=59)
+        q = Question.objects.create(question_text = "test_question",pub_date = time)
+        c = Choice.objects.create(question = q,choice_text = "test_choice",votes = 0)
+        self.assertIs(q.has_choices(),True)
+
+    def test_question_has_choices_whithout_choices(self):
+        """
+        Check if the function has choices return False if there is no choice associated to that question
+        """
+        time = timezone.now() - datetime.timedelta(hours=23, minutes=59, seconds=59)
+        q = Question.objects.create(question_text = "test_question",pub_date = time)
+        self.assertIs(q.has_choices(),False)
+    
 def create_question(question_text,days):
         """
         Create a question with the given `question_text` and published the
@@ -42,7 +60,9 @@ def create_question(question_text,days):
         in the past, positive for questions that have yet to be published).
         """
         time = timezone.now() + datetime.timedelta(days = days)
-        return Question.objects.create(question_text = question_text, pub_date = time)
+        q = Question.objects.create(question_text = question_text, pub_date = time)
+        c = Choice.objects.create(question = q,choice_text = "test_choice",votes = 0)
+        return q
     
 class QuestionViewIndex(TestCase):
     def test_no_questions(self):
@@ -100,6 +120,27 @@ class QuestionViewIndex(TestCase):
             response.context["latest_question_list"],
             [question2, question1],
         )
+    def test_wich_doesnt_contain_a_choice(self):
+        """
+        The questions index need to not display a question without a choice
+        """
+        time = timezone.now() - datetime.timedelta(hours=23, minutes=59, seconds=59)
+        q = Question.objects.create(question_text = "test_question",pub_date = time)
+        response = self.client.get(reverse("polls:index"))
+        self.assertQuerySetEqual(
+            response.context["latest_question_list"],
+            [],
+            )
+    def test_wich_does_contain_a_choice(self):
+        """
+        The questions index need to not display a question without a choice
+        """
+        q =create_question(question_text = "test_question",days=-30)
+        response = self.client.get(reverse("polls:index"))
+        self.assertQuerySetEqual(
+            response.context["latest_question_list"],
+            [q],
+            )
 
 class QuestionDetailViewTests(TestCase):
     def test_future_question(self):
