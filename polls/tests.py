@@ -12,7 +12,8 @@ class QuestionModelTestCase(TestCase):
         was_published_recently() returns False for questions whose pub_date
         is in the future.
         """
-        time = timezone.now()+datetime.timedelta(days=30)
+
+        time = timezone.now() + datetime.timedelta(days=30)
         future_question = Question(pub_date = time)
         self.assertIs(future_question.was_published_recently(),False)
     
@@ -22,6 +23,7 @@ class QuestionModelTestCase(TestCase):
         was_published_recently() returns False for questions whose pub_date
         is older than 1 day.
         """
+
         time = timezone.now() - datetime.timedelta(days=1, seconds=1)
         old_question = Question(pub_date=time)
         self.assertIs(old_question.was_published_recently(), False)
@@ -32,6 +34,7 @@ class QuestionModelTestCase(TestCase):
         was_published_recently() returns True for questions whose pub_date
         is within the last day.
         """
+
         time = timezone.now() - datetime.timedelta(hours=23, minutes=59, seconds=59)
         recent_question = Question(pub_date=time)
         self.assertIs(recent_question.was_published_recently(), True)
@@ -40,18 +43,20 @@ class QuestionModelTestCase(TestCase):
         """
         Check if the function has choices return True if there is a choice associated to that question
         """
+
         time = timezone.now() - datetime.timedelta(hours=23, minutes=59, seconds=59)
-        q = Question.objects.create(question_text = "test_question",pub_date = time)
-        c = Choice.objects.create(question = q,choice_text = "test_choice",votes = 0)
-        self.assertIs(q.has_choices(),True)
+        q = Question.objects.create(question_text = "test_question", pub_date = time)
+        c = Choice.objects.create(question = q, choice_text = "test_choice", votes = 0)
+        self.assertIs(q.has_choices(), True)
 
     def test_question_has_choices_whithout_choices(self):
         """
         Check if the function has choices return False if there is no choice associated to that question
         """
+
         time = timezone.now() - datetime.timedelta(hours=23, minutes=59, seconds=59)
-        q = Question.objects.create(question_text = "test_question",pub_date = time)
-        self.assertIs(q.has_choices(),False)
+        q = Question.objects.create(question_text = "test_question", pub_date = time)
+        self.assertIs(q.has_choices(), False)
     
 def create_question(question_text,days):
         """
@@ -59,9 +64,10 @@ def create_question(question_text,days):
         given number of `days` offset to now (negative for questions published
         in the past, positive for questions that have yet to be published).
         """
+
         time = timezone.now() + datetime.timedelta(days = days)
         q = Question.objects.create(question_text = question_text, pub_date = time)
-        c = Choice.objects.create(question = q,choice_text = "test_choice",votes = 0)
+        c = Choice.objects.create(question = q, choice_text = "test_choice", votes = 0)
         return q
     
 class QuestionViewIndex(TestCase):
@@ -69,6 +75,7 @@ class QuestionViewIndex(TestCase):
         """
         If no questions exist, an appropriate message is displayed.
         """
+
         response = self.client.get(reverse("polls:index"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "No polls are available.")
@@ -79,7 +86,8 @@ class QuestionViewIndex(TestCase):
         Questions with a pub_date in the past are displayed on the
         index page.
         """
-        question = create_question(question_text="Past question.", days=-30)
+
+        question = create_question(question_text = "Past question.", days = -30)
         response = self.client.get(reverse("polls:index"))
         self.assertQuerySetEqual(
             response.context["latest_question_list"],
@@ -91,7 +99,8 @@ class QuestionViewIndex(TestCase):
         Questions with a pub_date in the future aren't displayed on
         the index page.
         """
-        create_question(question_text="Future question.", days=30)
+
+        create_question(question_text="Future question.", days = 30)
         response = self.client.get(reverse("polls:index"))
         self.assertContains(response, "No polls are available.")
         self.assertQuerySetEqual(response.context["latest_question_list"], [])
@@ -101,8 +110,9 @@ class QuestionViewIndex(TestCase):
         Even if both past and future questions exist, only past questions
         are displayed.
         """
-        question = create_question(question_text="Past question.", days=-30)
-        create_question(question_text="Future question.", days=30)
+
+        question = create_question(question_text="Past question.", days = -30)
+        create_question(question_text="Future question.", days = 30)
         response = self.client.get(reverse("polls:index"))
         self.assertQuerySetEqual(
             response.context["latest_question_list"],
@@ -113,8 +123,9 @@ class QuestionViewIndex(TestCase):
         """
         The questions index page may display multiple questions.
         """
-        question1 = create_question(question_text="Past question 1.", days=-30)
-        question2 = create_question(question_text="Past question 2.", days=-5)
+
+        question1 = create_question(question_text="Past question 1.", days = -30)
+        question2 = create_question(question_text="Past question 2.", days = -5)
         response = self.client.get(reverse("polls:index"))
         self.assertQuerySetEqual(
             response.context["latest_question_list"],
@@ -124,8 +135,9 @@ class QuestionViewIndex(TestCase):
         """
         The questions index need to not display a question without a choice
         """
+
         time = timezone.now() - datetime.timedelta(hours=23, minutes=59, seconds=59)
-        q = Question.objects.create(question_text = "test_question",pub_date = time)
+        q = Question.objects.create(question_text = "test_question", pub_date = time)
         response = self.client.get(reverse("polls:index"))
         self.assertQuerySetEqual(
             response.context["latest_question_list"],
@@ -135,7 +147,8 @@ class QuestionViewIndex(TestCase):
         """
         The questions index need to not display a question without a choice
         """
-        q =create_question(question_text = "test_question",days=-30)
+
+        q =create_question(question_text = "test_question", days = -30)
         response = self.client.get(reverse("polls:index"))
         self.assertQuerySetEqual(
             response.context["latest_question_list"],
@@ -148,6 +161,7 @@ class QuestionDetailViewTests(TestCase):
         The detail view of a question with a pub_date in the future
         returns a 404 not found.
         """
+
         future_question = create_question(question_text="Future question.", days=5)
         url = reverse("polls:detail", args=(future_question.id,))
         response = self.client.get(url)
@@ -158,6 +172,7 @@ class QuestionDetailViewTests(TestCase):
         The detail view of a question with a pub_date in the past
         displays the question's text.
         """
+
         past_question = create_question(question_text="Past Question.", days=-5)
         url = reverse("polls:detail", args=(past_question.id,))
         response = self.client.get(url)
